@@ -1,0 +1,37 @@
+{
+  "name": "@aptoma/sqs-consumer",
+  "version": "0.1.0",
+  "description": "AWS SQS consumer",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint index.js test",
+    "watch": "NODE_ENV=test mocha --watch 'test/**/*.js' --timeout 500",
+    "test": "npm run lint && NODE_ENV=test nyc --reporter=text-summary --reporter=lcov mocha --exit --timeout 3000 'test/**/*.test.js' 'test/**/*.test.js'",
+    "release": "npm run test && release-it -n -i patch",
+    "release:minor": "npm run test && release-it -n -i minor",
+    "release:major": "npm run test && release-it -n -i major"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aptoma/sqs-consumer.git"
+  },
+  "author": "Martin Jonsson <martin@aptoma.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/aptoma/sqs-consumer/issues"
+  },
+  "homepage": "https://github.com/aptoma/sqs-consumer#readme",
+  "devDependencies": {
+    "@aptoma/eslint-config": "^7.0.1",
+    "chai": "^4.2.0",
+    "eslint": "^5.14.1",
+    "eslint-plugin-mocha": "^5.3.0",
+    "mocha": "^5.2.0",
+    "nyc": "^13.3.0",
+    "release-it": "^10.1.0",
+    "sinon": "^7.3.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.490.0"
+  }
+}
