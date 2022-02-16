@@ -60,16 +60,14 @@ class SQSConsumer extends EventEmitter {
 
 			this.emit('didPoll');
 
-			if (!numMessages) {
-				return this.shouldWePoll();
-			}
-
-			res.Messages.forEach((msg) => {
-				this.numActiveMessages++;
-				this.handleMessage(msg, this.createCallback(msg)).catch((err) => {
-					this.emit('error', err);
+			if (numMessages) {
+				res.Messages.forEach((msg) => {
+					this.numActiveMessages++;
+					this.handleMessage(msg, this.createCallback(msg)).catch((err) => {
+						this.emit('error', err);
+					});
 				});
-			});
+			}
 
 			this.shouldWePoll();
 		} catch (err) {
