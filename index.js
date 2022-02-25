@@ -13,13 +13,11 @@ class SQSConsumer extends EventEmitter {
 		aws = {},
 		messageAttributeNames = [],
 		batchSize = 1,
-		maxNumberOfMessages = 1,
 		waitTimeSeconds = 0,
 		handleMessage
 	}) {
 		super();
 		this.queueUrl = queueUrl;
-		this.maxNumberOfMessages = maxNumberOfMessages;
 		this.messageAttributeNames = messageAttributeNames;
 		this.waitTimeSeconds = waitTimeSeconds;
 		this.handleMessage = handleMessage;
@@ -45,7 +43,7 @@ class SQSConsumer extends EventEmitter {
 			QueueUrl: this.queueUrl,
 			AttributeNames: ['All'],
 			MessageAttributeNames: this.messageAttributeNames,
-			MaxNumberOfMessages: this.maxNumberOfMessages,
+			MaxNumberOfMessages: this.getMaxNumberOfMessages(),
 			WaitTimeSeconds: this.waitTimeSeconds
 		};
 
@@ -76,6 +74,17 @@ class SQSConsumer extends EventEmitter {
 		} finally {
 			clearTimeout(timeout);
 		}
+	}
+
+	getMaxNumberOfMessages() {
+		let max = this.batchSize - this.numActiveMessages;
+		if (max > 10) {
+			max = 10;
+		} else if (max < 1) {
+			max = 1;
+		}
+
+		return max;
 	}
 
 	async shouldWePoll() {
