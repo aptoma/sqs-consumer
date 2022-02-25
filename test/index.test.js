@@ -64,6 +64,30 @@ describe('SQS Consumer', () => {
 		});
 	});
 
+	describe('getMaxNumberOfMessages()', () => {
+		it('should return max 10', () => {
+			consumer.batchSize = 15;
+			consumer.numActiveMessages = 0;
+			expect(consumer.getMaxNumberOfMessages()).to.equal(10);
+		});
+
+		it('should return batchSize - numActiveMessages', () => {
+			consumer.batchSize = 15;
+			consumer.numActiveMessages = 10;
+			expect(consumer.getMaxNumberOfMessages()).to.equal(5);
+		});
+
+		it('should never be less than 1', () => {
+			consumer.batchSize = 15;
+			consumer.numActiveMessages = 15;
+			expect(consumer.getMaxNumberOfMessages()).to.equal(1);
+
+			consumer.batchSize = 15;
+			consumer.numActiveMessages = 20;
+			expect(consumer.getMaxNumberOfMessages()).to.equal(1);
+		});
+	});
+
 	describe('handleMessage', () => {
 		it('callback with error returns message to queue', async () => {
 			consumer.handleMessage = sandbox.stub().callsArgWith(1, new Error('shit'));

@@ -12,7 +12,6 @@ const Consumer = require('@aptoma/sqs-consumer');
 const app = new Consumer({
 	queueUrl: 'https://sqs.eu-central-1.amazonaws.com/....',
 	batchSize: 15,
-	maxNumberOfMessages: 10,
 	waitTimeSeconds: 10,
 	aws: {
 		region: 'eu-central-1'
