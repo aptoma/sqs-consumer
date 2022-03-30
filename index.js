@@ -109,6 +109,7 @@ class SQSConsumer extends EventEmitter {
 	createCallback(msg) {
 		return async (err) => {
 			this.numActiveMessages--;
+			this.shouldWePoll();
 			if (err) {
 				try {
 					await this.returnMessageToQueue(msg.ReceiptHandle);
