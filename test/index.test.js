@@ -43,9 +43,10 @@ describe('SQS Consumer', () => {
 		consumer.on('error', onError);
 	});
 
-	afterEach(() => {
+	afterEach(async () => {
 		sandbox.restore();
-		consumer.stop();
+		consumer.numActiveMessages = 0;
+		await consumer.stop();
 	});
 
 	describe('start()', () => {
@@ -61,6 +62,37 @@ describe('SQS Consumer', () => {
 			})).to.be.true;
 
 			expect(onError.callCount).to.equal(0);
+		});
+	});
+
+	describe('stop()', () => {
+		it('should return right away if we have no active messages', async () => {
+			await consumer.start();
+			consumer.numActiveMessages = 0;
+			const shutdownPromise = consumer.stop();
+			await Promise.race([shutdownPromise, new Promise((resolve, reject) => reject('still running'))]);
+		});
+
+		it('should wait until active messages have been drained before returning', async () => {
+			await consumer.start();
+			consumer.numActiveMessages = 1;
+			const shutdownPromise = consumer.stop();
+
+			let res = await Promise.race([shutdownPromise, new Promise((resolve) => resolve('still running'))]);
+			expect(res).to.equal('still running');
+
+			consumer.numActiveMessages = 0;
+			while (true) {
+				res = await Promise.race([
+					shutdownPromise,
+					new Promise((resolve) => setTimeout(() => {
+						resolve('still running');
+					}, 10))
+				]);
+				if (res !== 'still running') {
+					break;
+				}
+			}
 		});
 	});
 
