@@ -66,17 +66,24 @@ describe('SQS Consumer', () => {
 	});
 
 	describe('stop()', () => {
+		it('should return right away if gracefulTimeout is falsy', async () => {
+			await consumer.start();
+			consumer.numActiveMessages = 1;
+			const shutdownPromise = consumer.stop();
+			await Promise.race([shutdownPromise, new Promise((resolve, reject) => reject('still running'))]);
+		});
+
 		it('should return right away if we have no active messages', async () => {
 			await consumer.start();
 			consumer.numActiveMessages = 0;
-			const shutdownPromise = consumer.stop();
+			const shutdownPromise = consumer.stop(20 * 1000);
 			await Promise.race([shutdownPromise, new Promise((resolve, reject) => reject('still running'))]);
 		});
 
 		it('should wait until active messages have been drained before returning', async () => {
 			await consumer.start();
 			consumer.numActiveMessages = 1;
-			const shutdownPromise = consumer.stop();
+			const shutdownPromise = consumer.stop(20 * 1000);
 
 			let res = await Promise.race([shutdownPromise, new Promise((resolve) => resolve('still running'))]);
 			expect(res).to.equal('still running');

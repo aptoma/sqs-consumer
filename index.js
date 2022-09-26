@@ -144,12 +144,15 @@ class SQSConsumer extends EventEmitter {
 		}
 	}
 
-	async stop(timeout = 20 * 1000) {
+	async stop(gracefulTimeout = 0) {
 		this.active = false;
 		this.abort();
 		clearInterval(this.intervalId);
+		if (!gracefulTimeout || isNaN(Number(gracefulTimeout))) {
+			return;
+		}
 		const start = Date.now();
-		while (Date.now() > start - timeout) {
+		while (Date.now() > start - Number(gracefulTimeout)) {
 			if (this.numActiveMessages <= 0) {
 				break;
 			}
