@@ -1,4 +1,5 @@
 'use strict';
+
 const AWS = require('aws-sdk');
 const EventEmitter = require('events');
 
@@ -143,12 +144,21 @@ class SQSConsumer extends EventEmitter {
 		}
 	}
 
-	stop() {
+	async stop(gracefulTimeout = 0) {
 		this.active = false;
 		this.abort();
 		clearInterval(this.intervalId);
+		if (!gracefulTimeout || isNaN(Number(gracefulTimeout))) {
+			return;
+		}
+		const start = Date.now();
+		while (Date.now() > start - Number(gracefulTimeout)) {
+			if (this.numActiveMessages <= 0) {
+				break;
+			}
+			await new Promise((resolve) => setTimeout(resolve, 10));
+		}
 	}
-
 }
 
 module.exports = SQSConsumer;
