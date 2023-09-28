@@ -1,14 +1,19 @@
+// @ts-check
 'use strict';
 
-const AWS = require('aws-sdk');
+const {
+	SQSClient,
+	DeleteMessageCommand,
+	ReceiveMessageCommand,
+	ChangeMessageVisibilityCommand
+} = require('@aws-sdk/client-sqs');
 const EventEmitter = require('events');
-
-const clientDefaults = {
-	apiVersion: '2012-11-05'
-};
 
 class SQSConsumer extends EventEmitter {
 
+	/**
+	 * @param {SQSConsumerConfig} config
+	 */
 	constructor({
 		queueUrl,
 		aws = {},
@@ -23,20 +28,26 @@ class SQSConsumer extends EventEmitter {
 		this.waitTimeSeconds = waitTimeSeconds;
 		this.handleMessage = handleMessage;
 		this.batchSize = batchSize;
-		this.client = new AWS.SQS(Object.assign({}, clientDefaults, aws));
+		this.client = new SQSClient(aws);
 		this.numActiveMessages = 0; // how many message are we currently processing
+		/** @type {Promise<ReceiveMessageCommandOutput> | boolean} */
 		this.activeRequest = false;
 		this.active = false;
-		this.intervalId = null;
+		/** @type {NodeJS.Timeout | undefined} */
+		this.intervalId = undefined;
 	}
 
+	/**
+	 * @param {string} receiptHandle
+	 * @return {Promise<DeleteMessageCommandOutput>}
+	 */
 	deleteMessage(receiptHandle) {
-		const params = {
+		const cmd = new DeleteMessageCommand({
 			QueueUrl: this.queueUrl,
 			ReceiptHandle: receiptHandle
-		};
+		});
 
-		return this.client.deleteMessage(params).promise();
+		return this.client.send(cmd);
 	}
 
 	async poll() {
@@ -45,22 +56,25 @@ class SQSConsumer extends EventEmitter {
 			AttributeNames: ['All'],
 			MessageAttributeNames: this.messageAttributeNames,
 			MaxNumberOfMessages: this.getMaxNumberOfMessages(),
-			WaitTimeSeconds: this.waitTimeSeconds
+			WaitTimeSeconds: this.waitTimeSeconds,
+			abortSignal: new AbortController().signal
+
 		};
 
+		/** @type {NodeJS.Timeout | undefined} */
 		let timeout;
 		try {
-			this.activeRequest = this.client.receiveMessage(params);
+			this.activeAbortController = new AbortController();
+			this.activeRequest = this.client.send(new ReceiveMessageCommand(params), {abortSignal: this.activeAbortController.signal});
 			timeout = setTimeout(this.abort.bind(this), (this.waitTimeSeconds + 5) * 1000);
-			const res = await this.activeRequest.promise();
+			const res = await this.activeRequest;
 			clearTimeout(timeout);
 			this.activeRequest = false;
 			const numMessages = res.Messages ? res.Messages.length : 0;
 
 			this.emit('didPoll');
-
 			if (numMessages) {
-				res.Messages.forEach((msg) => {
+				res.Messages?.forEach((msg) => {
 					this.numActiveMessages++;
 					this.handleMessage(msg, this.createCallback(msg)).catch((err) => {
 						this.emit('error', err);
@@ -73,7 +87,9 @@ class SQSConsumer extends EventEmitter {
 			this.activeRequest = false;
 			throw err;
 		} finally {
-			clearTimeout(timeout);
+			if (timeout) {
+				clearTimeout(timeout);
+			}
 		}
 	}
 
@@ -98,33 +114,43 @@ class SQSConsumer extends EventEmitter {
 		}
 	}
 
+	/**
+	 * @param {string} receiptHandle
+	 * @return {Promise<ChangeMessageVisibilityCommandOutput>}
+	 */
 	returnMessageToQueue(receiptHandle) {
-		const params = {
+		const cmd = new ChangeMessageVisibilityCommand({
 			QueueUrl: this.queueUrl,
 			ReceiptHandle: receiptHandle,
 			VisibilityTimeout: 0
-		};
-		return this.client.changeMessageVisibility(params).promise();
+		});
+		return this.client.send(cmd);
 	}
 
+	/**
+	 * @param {Message} msg
+	 * @return {MessageCallback}
+	 */
 	createCallback(msg) {
 		return async (err) => {
 			this.numActiveMessages--;
 			this.shouldWePoll();
-			if (err) {
+			if (msg.ReceiptHandle) {
+				if (err) {
+					try {
+						await this.returnMessageToQueue(msg.ReceiptHandle);
+					} catch (err) {
+						this.emit('error', err);
+					}
+
+					return;
+				}
+
 				try {
-					await this.returnMessageToQueue(msg.ReceiptHandle);
+					await this.deleteMessage(msg.ReceiptHandle);
 				} catch (err) {
 					this.emit('error', err);
 				}
-
-				return;
-			}
-
-			try {
-				await this.deleteMessage(msg.ReceiptHandle);
-			} catch (err) {
-				this.emit('error', err);
 			}
 		};
 	}
@@ -139,15 +165,18 @@ class SQSConsumer extends EventEmitter {
 
 	abort() {
 		if (this.activeRequest) {
-			this.activeRequest.abort();
+			this.activeAbortController?.abort();
 			this.activeRequest = false;
+			this.activeAbortController = undefined;
 		}
 	}
 
 	async stop(gracefulTimeout = 0) {
 		this.active = false;
 		this.abort();
-		clearInterval(this.intervalId);
+		if (this.intervalId) {
+			clearInterval(this.intervalId);
+		}
 		if (!gracefulTimeout || isNaN(Number(gracefulTimeout))) {
 			return;
 		}
@@ -162,3 +191,21 @@ class SQSConsumer extends EventEmitter {
 }
 
 module.exports = SQSConsumer;
+
+/**
+ * @typedef {object} SQSConsumerConfig
+ * @property {string} queueUrl
+ * @property {import('@aws-sdk/client-sqs').SQSClientConfig} [aws]
+ * @property {string[]} [messageAttributeNames]
+ * @property {number} [batchSize]
+ * @property {number} [waitTimeSeconds]
+ * @property {SQSConsumerMessageHandler} handleMessage
+ *
+ * @typedef {(msg: Message, cb: MessageCallback) => Promise<any>} SQSConsumerMessageHandler
+ * @typedef {(error?: Error) => Promise<void>} MessageCallback
+ *
+ * @typedef {import('@aws-sdk/client-sqs').Message} Message
+ * @typedef {import('@aws-sdk/client-sqs').ReceiveMessageCommandOutput} ReceiveMessageCommandOutput
+ * @typedef {import('@aws-sdk/client-sqs').DeleteMessageCommandOutput} DeleteMessageCommandOutput
+ * @typedef {import('@aws-sdk/client-sqs').ChangeMessageVisibilityCommandOutput} ChangeMessageVisibilityCommandOutput
+ */

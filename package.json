@@ -23,15 +23,16 @@
   "homepage": "https://github.com/aptoma/sqs-consumer#readme",
   "devDependencies": {
     "@aptoma/eslint-config": "^7.0.1",
-    "chai": "^4.3.6",
-    "eslint": "^8.9.0",
-    "eslint-plugin-mocha": "^10.0.3",
-    "mocha": "^9.2.0",
+    "aws-sdk-client-mock": "^3.0.0",
+    "chai": "^4.3.10",
+    "eslint": "^8.50.0",
+    "eslint-plugin-mocha": "^10.2.0",
+    "mocha": "^10.2.0",
     "nyc": "^15.1.0",
     "release-it": "^10.1.0",
-    "sinon": "^13.0.1"
+    "sinon": "^16.0.0"
   },
   "dependencies": {
-    "aws-sdk": "^2.1074.0"
+    "@aws-sdk/client-sqs": "^3.421.0"
   }
 }
