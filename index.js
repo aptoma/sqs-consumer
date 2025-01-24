@@ -51,14 +51,15 @@ class SQSConsumer extends EventEmitter {
 	}
 
 	async poll() {
+		/**
+		 * @type {ReceiveMessageCommandInput}
+		 */
 		const params = {
 			QueueUrl: this.queueUrl,
 			AttributeNames: ['All'],
 			MessageAttributeNames: this.messageAttributeNames,
 			MaxNumberOfMessages: this.getMaxNumberOfMessages(),
-			WaitTimeSeconds: this.waitTimeSeconds,
-			abortSignal: new AbortController().signal
-
+			WaitTimeSeconds: this.waitTimeSeconds
 		};
 
 		/** @type {NodeJS.Timeout | undefined} */
@@ -208,4 +209,5 @@ module.exports = SQSConsumer;
  * @typedef {import('@aws-sdk/client-sqs').ReceiveMessageCommandOutput} ReceiveMessageCommandOutput
  * @typedef {import('@aws-sdk/client-sqs').DeleteMessageCommandOutput} DeleteMessageCommandOutput
  * @typedef {import('@aws-sdk/client-sqs').ChangeMessageVisibilityCommandOutput} ChangeMessageVisibilityCommandOutput
+ * @typedef {import('@aws-sdk/client-sqs').ReceiveMessageCommandInput} ReceiveMessageCommandInput
  */
