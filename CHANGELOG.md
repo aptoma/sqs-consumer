@@ -1,7 +1,8 @@
 ### Changelog
 
-#### [2.1.0](https://github.com/aptoma/sqs-consumer/compare/2.1.0...2.1.0) 2025-01-24
+#### [3.0.0](https://github.com/aptoma/sqs-consumer/compare/2.1.0...3.0.0) 2025-01-28
 
+- Update deps, add auto-changelog and github ci [`faa4d9b`](https://github.com/aptoma/sqs-consumer/commit/faa4d9bc9008dadd9d4b0db12fe5c7ad50c329f2)
 - Update to aws-sdk v3. [`c3a4eea`](https://github.com/aptoma/sqs-consumer/commit/c3a4eea0a477e314886e318a6aa8c49ccd1ccd32)
 
 #### [2.1.0](https://github.com/aptoma/sqs-consumer/compare/2.0.1...2.1.0) 2022-10-04
