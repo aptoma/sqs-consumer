@@ -4,9 +4,10 @@
   "description": "AWS SQS consumer",
   "main": "index.js",
   "scripts": {
+    "type-check": "npx -p typescript tsc --allowJs --checkJs --noEmit --target es2022 -m nodenext --strictNullChecks --strictFunctionTypes index.js",
     "lint": "eslint index.js test",
     "watch": "NODE_ENV=test mocha --watch 'test/**/*.js' --timeout 500",
-    "test": "npm run lint && NODE_ENV=test nyc --reporter=text-summary --reporter=lcov mocha --exit --timeout 3000 'test/**/*.test.js' 'test/**/*.test.js'",
+    "test": "npm run lint && npm run type-check && NODE_ENV=test nyc --reporter=text-summary --reporter=lcov mocha --exit --timeout 3000 'test/**/*.test.js' 'test/**/*.test.js'",
     "release": "npm run test && release-it -n -i patch",
     "release:minor": "npm run test && release-it -n -i minor",
     "release:major": "npm run test && release-it -n -i major"
@@ -22,17 +23,19 @@
   },
   "homepage": "https://github.com/aptoma/sqs-consumer#readme",
   "devDependencies": {
-    "@aptoma/eslint-config": "^7.0.1",
-    "aws-sdk-client-mock": "^3.0.0",
+    "@aptoma/eslint-config": "^8.0.0",
+    "auto-changelog": "^2.5.0",
+    "aws-sdk-client-mock": "^4.1.0",
     "chai": "^4.3.10",
     "eslint": "^8.50.0",
-    "eslint-plugin-mocha": "^10.2.0",
-    "mocha": "^10.2.0",
+    "eslint-plugin-mocha": "^10.5.0",
+    "mocha": "^11.1.0",
     "nyc": "^15.1.0",
-    "release-it": "^10.1.0",
-    "sinon": "^16.0.0"
+    "release-it": "^18.1.2",
+    "sinon": "^19.0.2",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@aws-sdk/client-sqs": "^3.421.0"
+    "@aws-sdk/client-sqs": "^3.734.0"
   }
 }

@@ -1,6 +1,15 @@
 {
-	"pkgFiles": ["package.json"],
+	"pkgFiles": [
+		"package.json"
+	],
 	"git": {
-		"requireCleanWorkingDir": false
+		"requireCleanWorkingDir": true,
+		"changelog": "auto-changelog --stdout --commit-limit false -u --template https://raw.githubusercontent.com/release-it/release-it/master/templates/changelog-compact.hbs"
+	},
+	"npm": {
+		"publish": true
+	},
+	"hooks": {
+		"after:bump": "auto-changelog -p"
 	}
 }

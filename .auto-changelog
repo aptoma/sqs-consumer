@@ -1,0 +1,9 @@
+{
+  "output": "CHANGELOG.md",
+  "template": "https://amp-public-files-euc1.s3.eu-central-1.amazonaws.com/auto-changelog/changelog.hbs",
+  "unreleased": false,
+  "commitLimit": false,
+  "ignoreCommitPattern": "^Release \\d+\\.\\d+\\.\\d+$",
+  "appendGitLog": "--no-merges",
+  "sortCommits": "date-desc"
+}
